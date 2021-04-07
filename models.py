@@ -5,6 +5,23 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
+from torchmetrics import Accuracy, AUROC, F1
+
+
+def focal_loss(preds, targets, alpha=0.25, gamma=1.5):
+    # loss_fn = nn.BCEWithLogitsLoss(reduction="none")
+    # bce_loss = loss_fn(preds, targets)
+    bce_loss = F.binary_cross_entropy_with_logits(
+        preds, targets.to(preds.dtype), reduction="none"
+    )
+    probs = torch.sigmoid(preds)
+    loss = torch.where(
+        targets >= 0.5,
+        alpha * (1.0 - probs) ** gamma * bce_loss,
+        (1 - alpha) * probs ** gamma * bce_loss,
+    )
+    loss = loss.mean()
+    return loss
 
 
 class HPAClassifier(pl.LightningModule):
@@ -15,6 +32,8 @@ class HPAClassifier(pl.LightningModule):
         init_lr=1e-4,
         weight_decay=1e-5,
         max_epochs=10,
+        alpha=0.25,
+        gamma=1.5,
     ):
         super().__init__()
         self.model_name = model_name
@@ -23,38 +42,94 @@ class HPAClassifier(pl.LightningModule):
         self.weight_decay = weight_decay
         self.max_epochs = max_epochs
         self.num_classes = 19
+        self.alpha = alpha
+        self.gamma = gamma
 
         self.model = self.get_model()
 
-    # TODO
+        self.train_acc = Accuracy()
+        self.valid_acc = Accuracy()
+
+        self.train_f1 = F1(
+            num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+        self.valid_f1 = F1(
+            num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+
+        self.train_auroc = AUROC(
+            num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+        self.valid_auroc = AUROC(
+            num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+
     def forward(self, x):
-        target = self.model(x)
-        return target
+        preds = torch.sigmoid(self.model(x))
+        return preds
 
     def training_step(self, batch, batch_idx):
-        image, target = batch
-        output = self.model(image)
+        images, targets = batch
+        preds = self.model(images)
 
-        # loss =
+        loss = focal_loss(preds, targets, alpha=self.alpha, gamma=self.gamma)
+
+        preds = torch.sigmoid(preds)
+
+        self.log("train_loss", loss)
+        self.log("train_step_acc", self.train_acc(preds, targets))
+        self.train_f1(preds, targets)
+        self.train_auroc(preds, targets)
+
+        return loss
 
     def training_epoch_end(self, training_step_outputs):
-        pass
+        self.log("train_epoch_acc", self.train_acc.compute())
+        train_f1 = self.train_f1.compute()
+
+        try:
+            train_auroc = self.train_auroc.compute()
+        except ValueError:
+            train_auroc = torch.zeros(self.num_classes)
+
+        for i in range(self.num_classes):
+            self.log(f"train_epoch_f1_{i}", train_f1[i])
+            self.log(f"train_epoch_auroc_{i}", train_auroc[i])
 
     def validation_step(self, batch, batch_idx):
-        image, target = batch
-        output = self.model(image)
+        images, targets = batch
+        preds = self.model(images)
 
-        # loss =
+        loss = focal_loss(preds, targets, alpha=self.alpha, gamma=self.gamma)
+
+        preds = torch.sigmoid(preds)
+
+        self.log("valid_loss", loss)
+        self.log("valid_step_acc", self.valid_acc(preds, targets))
+        self.valid_f1(preds, targets)
+        self.valid_auroc(preds, targets)
+
+        return loss
 
     def validation_epoch_end(self, validation_step_outputs):
-        pass
+        self.log("valid_acc_epoch", self.valid_acc.compute())
+        valid_f1 = self.valid_f1.compute()
+
+        try:
+            valid_auroc = self.valid_auroc.compute()
+        except ValueError:
+            valid_auroc = torch.zeros(self.num_classes)
+
+        for i in range(self.num_classes):
+            self.log(f"valid_epoch_f1_{i}", valid_f1[i])
+            self.log(f"valid_epoch_auroc_{i}", valid_auroc[i])
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(
             self.parameters(), lr=self.init_lr, weight_decay=self.weight_decay
         )
 
-        scheduler = CosineAnnealingLR(optimizer, T_max=self.max_eopchs)
+        scheduler = CosineAnnealingLR(optimizer, T_max=self.max_epochs)
         print(f"CosineAnnealingLR T_max epochs = {self.max_epochs}")
         return [optimizer], [scheduler]
 
