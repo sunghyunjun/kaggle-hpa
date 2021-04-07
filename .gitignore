@@ -5,6 +5,7 @@ __pycache__/
 .vscode
 lightning_logs*
 
+kaggle.json
 hpa-512512.zip
 dataset
 notebook
