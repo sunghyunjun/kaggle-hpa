@@ -42,13 +42,13 @@ class HPADataset(Dataset):
     def load_train_csv(self):
         self.train_df = pd.read_csv(self.train_csv_path)
 
-        # Convert "Label", string to numpy.ndarray
+        # Convert "Label", string to numpy.ndarray, remove duplicate label
         self.train_df["Label"] = self.train_df.Label.map(
-            lambda x: np.asarray(x.split("|")).astype(np.int)
+            lambda x: np.asarray(list(set(x.split("|")))).astype(np.int)
         )
 
         # One-hot encoded Label, for spliting folds
-        self.train_df["Label_onehot"] = self.train_df.Label.map(
+        self.train_df["Label"] = self.train_df.Label.map(
             lambda x: np.sum(np.eye(self.num_classes)[x].astype(np.int), axis=0)
         )
 

@@ -110,13 +110,15 @@ class HPADataModule(pl.LightningDataModule):
     def make_fold_index(self, n_splits=5, fold_index=0):
         print(f"Fold splits: {n_splits}")
         print(f"Fold index: {fold_index}")
-        mskf = MultilabelStratifiedKFold(n_splits=n_splits, shuffle=False)
+        mskf = MultilabelStratifiedKFold(
+            n_splits=n_splits, shuffle=False, random_state=None
+        )
 
         train_fold = []
         valid_fold = []
 
         X = self.train_df.ID
-        y = self.train_df.Label_onehot.values
+        y = self.train_df.Label.values
         y = np.stack(y, axis=0)
 
         for train_index, valid_index in mskf.split(X, y):
