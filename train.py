@@ -22,29 +22,50 @@ def main():
     parser = ArgumentParser(description="PyTorch HPA Training")
     parser.add_argument("--debug", action="store_true", help="debug mode")
     parser.add_argument(
+        "--lr-finder", action="store_true", help="run learning rate finder"
+    )
+    parser.add_argument(
         "--dataset-dir", default="dataset", metavar="DIR", help="path to dataset"
     )
+
+    # Pytorch-Lightning Trainer flags
     parser.add_argument(
         "--default-root-dir",
         default=os.getcwd(),
         metavar="DIR",
         help="path to checkpoint saving",
     )
+
+    # Pytorch-Lightning Trainer flags
     parser.add_argument(
         "--gpus", type=int, default=None, help="number of GPU (default: None for CPU)"
     )
+
+    # Pytorch-Lightning Trainer flags
     parser.add_argument(
         "--precision",
         type=int,
         default=32,
         help="precision (default:32, full precision)",
     )
+
+    # Pytorch-Lightning Trainer flags
     parser.add_argument(
         "--resume-from-checkpoint",
         type=str,
         default=None,
         help="resume from checkpoint in the path",
     )
+
+    # Pytorch-Lightning Trainer flags
+    parser.add_argument(
+        "--max-epochs",
+        type=int,
+        default=10,
+        metavar="N",
+        help="number of epochs to train (default: 10)",
+    )
+
     parser.add_argument(
         "--batch-size",
         type=int,
@@ -100,13 +121,6 @@ def main():
         default=1e-4,
         metavar="DECAY",
         help="weight decay (default: 0.0001)",
-    )
-    parser.add_argument(
-        "--max-epochs",
-        type=int,
-        default=10,
-        metavar="N",
-        help="number of epochs to train (default: 10)",
     )
     parser.add_argument(
         "--alpha", type=float, default=0.25, help="focal loss alpha (default: 0.25)"
@@ -184,6 +198,7 @@ def main():
             project_name=args.neptune_project,
             experiment_name=args.neptune_experiment,
             params=args.__dict__,
+            upload_source_files="*.py",
         )
     else:
         # Use default logger, TenserBoardLogger
@@ -198,7 +213,14 @@ def main():
         args, callbacks=[checkpoint_callback, lr_monitor], logger=logger
     )
 
-    trainer.fit(model, dm)
+    if args.lr_finder:
+        lr_finder = trainer.tuner.lr_find(model=model, datamodule=dm)
+        fig = lr_finder.plot(suggest=True)
+        fig.savefig("./suggested_lr.png")
+        suggested_lr = lr_finder.suggestion()
+        print(suggested_lr)
+    else:
+        trainer.fit(model, dm)
 
 
 if __name__ == "__main__":
