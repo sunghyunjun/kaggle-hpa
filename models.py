@@ -9,8 +9,6 @@ from torchmetrics import Accuracy, AUROC, F1
 
 
 def focal_loss(preds, targets, alpha=0.25, gamma=1.5):
-    # loss_fn = nn.BCEWithLogitsLoss(reduction="none")
-    # bce_loss = loss_fn(preds, targets)
     bce_loss = F.binary_cross_entropy_with_logits(
         preds, targets.to(preds.dtype), reduction="none"
     )
@@ -57,6 +55,7 @@ class HPAClassifier(pl.LightningModule):
             num_classes=self.num_classes, average=None, compute_on_step=False
         )
 
+        # AUROC returns list type when average=None
         self.train_auroc = AUROC(
             num_classes=self.num_classes, average=None, compute_on_step=False
         )
@@ -77,24 +76,29 @@ class HPAClassifier(pl.LightningModule):
         preds = torch.sigmoid(preds)
 
         self.log("train_loss", loss)
-        self.log("train_step_acc", self.train_acc(preds, targets))
+        self.log("train_acc_step", self.train_acc(preds, targets))
         self.train_f1(preds, targets)
         self.train_auroc(preds, targets)
 
         return loss
 
     def training_epoch_end(self, training_step_outputs):
-        self.log("train_epoch_acc", self.train_acc.compute())
+        self.log("train_acc_epoch", self.train_acc.compute())
         train_f1 = self.train_f1.compute()
 
         try:
+            # AUROC returns list type when average=None
             train_auroc = self.train_auroc.compute()
+            train_auroc = torch.FloatTensor(train_auroc)
         except ValueError:
             train_auroc = torch.zeros(self.num_classes)
 
         for i in range(self.num_classes):
-            self.log(f"train_epoch_f1_{i}", train_f1[i])
-            self.log(f"train_epoch_auroc_{i}", train_auroc[i])
+            self.log(f"train_f1_{i}", train_f1[i])
+            self.log(f"train_auroc_{i}", train_auroc[i])
+
+        self.log("train_f1_mean", torch.mean(train_f1))
+        self.log("train_auroc_mean", torch.mean(train_auroc))
 
     def validation_step(self, batch, batch_idx):
         images, targets = batch
@@ -105,7 +109,7 @@ class HPAClassifier(pl.LightningModule):
         preds = torch.sigmoid(preds)
 
         self.log("valid_loss", loss)
-        self.log("valid_step_acc", self.valid_acc(preds, targets))
+        self.log("valid_acc_step", self.valid_acc(preds, targets))
         self.valid_f1(preds, targets)
         self.valid_auroc(preds, targets)
 
@@ -116,13 +120,18 @@ class HPAClassifier(pl.LightningModule):
         valid_f1 = self.valid_f1.compute()
 
         try:
+            # AUROC returns list type when average=None
             valid_auroc = self.valid_auroc.compute()
+            valid_auroc = torch.FloatTensor(valid_auroc)
         except ValueError:
             valid_auroc = torch.zeros(self.num_classes)
 
         for i in range(self.num_classes):
-            self.log(f"valid_epoch_f1_{i}", valid_f1[i])
-            self.log(f"valid_epoch_auroc_{i}", valid_auroc[i])
+            self.log(f"valid_f1_{i}", valid_f1[i])
+            self.log(f"valid_auroc_{i}", valid_auroc[i])
+
+        self.log("valid_f1_mean", torch.mean(valid_f1))
+        self.log("valid_auroc_mean", torch.mean(valid_auroc))
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(
