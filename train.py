@@ -6,7 +6,7 @@ from pytorch_lightning.loggers import NeptuneLogger
 from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from datamodule import HPADataModule
+from datamodule import HPADataModule, HPAExtraRareDataModule
 from models import HPAClassifier
 
 
@@ -22,10 +22,22 @@ def main():
     parser = ArgumentParser(description="PyTorch HPA Training")
     parser.add_argument("--debug", action="store_true", help="debug mode")
     parser.add_argument(
+        "--dataset-choice",
+        default="base",
+        choices=["base", "extra-rare"],
+        help="choose dataset for training. base: default competition's dataset, extra-rare: base + extra-rare dataset",
+    )
+    parser.add_argument(
         "--lr-finder", action="store_true", help="run learning rate finder"
     )
     parser.add_argument(
         "--dataset-dir", default="dataset", metavar="DIR", help="path to dataset"
+    )
+    parser.add_argument(
+        "--dataset-rare-dir",
+        default="dataset-rare",
+        metavar="DIR",
+        help="path to extra dataset for rare classes",
     )
 
     # Pytorch-Lightning Trainer flags
@@ -158,14 +170,25 @@ def main():
     # ----------
     # data
     # ----------
-    dm = HPADataModule(
-        dataset_dir=args.dataset_dir,
-        batch_size=args.batch_size,
-        num_workers=args.workers,
-        fold_splits=args.fold_splits,
-        fold_index=args.fold_index,
-        image_size=args.image_size,
-    )
+    if args.dataset_choice == "extra-rare":
+        dm = HPAExtraRareDataModule(
+            dataset_dir=args.dataset_dir,
+            dataset_rare_dir=args.dataset_rare_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+        )
+    else:
+        dm = HPADataModule(
+            dataset_dir=args.dataset_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+        )
 
     # ----------
     # model
@@ -183,7 +206,7 @@ def main():
 
     checkpoint_callback = ModelCheckpoint(
         monitor="valid_loss",
-        filename="hpa-clf-{epoch:03d}-{val_loss:.4f}",
+        filename="hpa-clf-{epoch:03d}-{valid_loss:.6f}",
         save_last=True,
         save_top_k=3,
         mode="min",
