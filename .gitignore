@@ -7,5 +7,7 @@ lightning_logs*
 
 kaggle.json
 hpa-512512.zip
+hpa-single-cell-image-classification.zip
 dataset
+dataset-raw
 notebook
