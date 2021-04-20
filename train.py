@@ -11,6 +11,7 @@ from datamodule import (
     HPAExtraRareDataModule,
     HPASingleLabelExtraRareDataModule,
     HPARGYSingleLabelExtraRareDataModule,
+    HPARBYSingleLabelExtraRareDataModule,
 )
 from models import HPAClassifier
 
@@ -34,6 +35,7 @@ def main():
             "extra-rare",
             "single-label-extra-rare",
             "rgy-single-label-extra-rare",
+            "rby-single-label-extra-rare",
         ],
         help="choose dataset for training. base: default competition's dataset, extra-rare: base + extra-rare dataset",
     )
@@ -202,6 +204,16 @@ def main():
         )
     elif args.dataset_choice == "rgy-single-label-extra-rare":
         dm = HPARGYSingleLabelExtraRareDataModule(
+            dataset_dir=args.dataset_dir,
+            dataset_rare_dir=args.dataset_rare_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+        )
+    elif args.dataset_choice == "rby-single-label-extra-rare":
+        dm = HPARBYSingleLabelExtraRareDataModule(
             dataset_dir=args.dataset_dir,
             dataset_rare_dir=args.dataset_rare_dir,
             batch_size=args.batch_size,

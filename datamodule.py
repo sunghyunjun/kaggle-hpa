@@ -17,6 +17,12 @@ from dataset import (
     HPASingleLabelDataset,
     HPA_RGB_MEAN,
     HPA_RGB_STD,
+    HPA_RGY_MEAN,
+    HPA_RGY_STD,
+    HPA_RBY_MEAN,
+    HPA_RBY_STD,
+    HPA_GBY_MEAN,
+    HPA_GBY_STD,
 )
 
 
@@ -38,6 +44,8 @@ class HPADataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.resize_height = image_size
         self.resize_width = image_size
+        self.norm_mean = HPA_RGB_MEAN
+        self.norm_std = HPA_RGB_STD
 
     def setup(self, stage=None):
         self.train_dataset = HPADataset(
@@ -96,7 +104,7 @@ class HPADataModule(pl.LightningDataModule):
                 A.HorizontalFlip(p=0.5),
                 A.VerticalFlip(p=0.5),
                 A.Rotate(border_mode=cv2.BORDER_CONSTANT, value=0, p=0.5),
-                A.Normalize(mean=HPA_RGB_MEAN, std=HPA_RGB_STD),
+                A.Normalize(mean=self.norm_mean, std=self.norm_std),
                 ToTensorV2(),
             ]
         )
@@ -105,7 +113,7 @@ class HPADataModule(pl.LightningDataModule):
         return A.Compose(
             [
                 A.Resize(height=self.resize_height, width=self.resize_width),
-                A.Normalize(mean=HPA_RGB_MEAN, std=HPA_RGB_STD),
+                A.Normalize(mean=self.norm_mean, std=self.norm_std),
                 ToTensorV2(),
             ]
         )
@@ -260,6 +268,28 @@ class HPASingleLabelExtraRareDataModule(HPADataModule):
 
 
 class HPARGYSingleLabelExtraRareDataModule(HPAExtraRareDataModule):
+    def __init__(
+        self,
+        dataset_dir="dataset",
+        dataset_rare_dir="dataset-rare",
+        fold_splits=5,
+        fold_index=0,
+        batch_size=32,
+        num_workers=2,
+        image_size=512,
+    ):
+        super().__init__()
+        self.dataset_dir = dataset_dir
+        self.dataset_rare_dir = dataset_rare_dir
+        self.fold_splits = fold_splits
+        self.fold_index = fold_index
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.resize_height = image_size
+        self.resize_width = image_size
+        self.norm_mean = HPA_RGY_MEAN
+        self.norm_std = HPA_RGY_STD
+
     def setup(self, stage=None):
         print("Train on HPARGYSingleLabelExtraRareDataModule.")
         self.train_hpa_dataset = HPARGYSingleLabelDataset(
@@ -297,6 +327,28 @@ class HPARGYSingleLabelExtraRareDataModule(HPAExtraRareDataModule):
 
 
 class HPARBYSingleLabelExtraRareDataModule(HPAExtraRareDataModule):
+    def __init__(
+        self,
+        dataset_dir="dataset",
+        dataset_rare_dir="dataset-rare",
+        fold_splits=5,
+        fold_index=0,
+        batch_size=32,
+        num_workers=2,
+        image_size=512,
+    ):
+        super().__init__()
+        self.dataset_dir = dataset_dir
+        self.dataset_rare_dir = dataset_rare_dir
+        self.fold_splits = fold_splits
+        self.fold_index = fold_index
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.resize_height = image_size
+        self.resize_width = image_size
+        self.norm_mean = HPA_RBY_MEAN
+        self.norm_std = HPA_RBY_STD
+
     def setup(self, stage=None):
         print("Train on HPARBYSingleLabelExtraRareDataModule.")
         self.train_hpa_dataset = HPARBYSingleLabelDataset(
