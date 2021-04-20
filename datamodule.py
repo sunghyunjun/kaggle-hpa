@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader, Subset, ConcatDataset
 
 from dataset import (
     HPADataset,
+    HPARBYSingleLabelDataset,
     HPARGYSingleLabelDataset,
     HPASingleLabelDataset,
     HPA_RGB_MEAN,
@@ -223,7 +224,7 @@ class HPASingleLabelExtraRareDataModule(HPADataModule):
         self.resize_width = image_size
 
     def setup(self, stage=None):
-        print("Train on HPAExtraRareDataModule.")
+        print("Train on HPASingleLabelExtraRareDataModule.")
         self.train_hpa_dataset = HPASingleLabelDataset(
             self.dataset_dir, transform=self.get_train_transform()
         )
@@ -260,7 +261,7 @@ class HPASingleLabelExtraRareDataModule(HPADataModule):
 
 class HPARGYSingleLabelExtraRareDataModule(HPAExtraRareDataModule):
     def setup(self, stage=None):
-        print("Train on HPAExtraRareDataModule.")
+        print("Train on HPARGYSingleLabelExtraRareDataModule.")
         self.train_hpa_dataset = HPARGYSingleLabelDataset(
             self.dataset_dir, transform=self.get_train_transform()
         )
@@ -272,6 +273,43 @@ class HPARGYSingleLabelExtraRareDataModule(HPAExtraRareDataModule):
             self.dataset_rare_dir, transform=self.get_train_transform()
         )
         self.valid_rare_dataset = HPARGYSingleLabelDataset(
+            self.dataset_rare_dir, transform=self.get_valid_transform()
+        )
+
+        self.train_dataset = ConcatDataset(
+            [self.train_hpa_dataset, self.train_rare_dataset]
+        )
+        self.valid_dataset = ConcatDataset(
+            [self.valid_hpa_dataset, self.valid_rare_dataset]
+        )
+
+        self.train_df = pd.concat(
+            [self.train_hpa_dataset.train_df, self.train_rare_dataset.train_df],
+            axis=0,
+        )
+
+        self.train_index, self.valid_index = self.make_fold_index(
+            n_splits=self.fold_splits, fold_index=self.fold_index
+        )
+
+        self.train_dataset = Subset(self.train_dataset, self.train_index)
+        self.valid_dataset = Subset(self.valid_dataset, self.valid_index)
+
+
+class HPARBYSingleLabelExtraRareDataModule(HPAExtraRareDataModule):
+    def setup(self, stage=None):
+        print("Train on HPARBYSingleLabelExtraRareDataModule.")
+        self.train_hpa_dataset = HPARBYSingleLabelDataset(
+            self.dataset_dir, transform=self.get_train_transform()
+        )
+        self.valid_hpa_dataset = HPARBYSingleLabelDataset(
+            self.dataset_dir, transform=self.get_valid_transform()
+        )
+
+        self.train_rare_dataset = HPARBYSingleLabelDataset(
+            self.dataset_rare_dir, transform=self.get_train_transform()
+        )
+        self.valid_rare_dataset = HPARBYSingleLabelDataset(
             self.dataset_rare_dir, transform=self.get_valid_transform()
         )
 
