@@ -27,6 +27,67 @@ from dataset import (
 )
 
 
+def norm_transform(resize_height, resize_width, norm_mean, norm_std):
+    return A.Compose(
+        [
+            A.Resize(height=resize_height, width=resize_width),
+            A.Normalize(mean=norm_mean, std=norm_std),
+            ToTensorV2(),
+        ]
+    )
+
+
+def base_transform(resize_height, resize_width, norm_mean, norm_std):
+    return A.Compose(
+        [
+            A.Resize(height=resize_height, width=resize_width),
+            # scale size(bias=1): (-0.2, 0.2) + 1 = (0.8, 1.2)
+            A.RandomScale(scale_limit=(-0.2, 0.2), p=1.0),
+            ## scale size(bias=1): (-0.9, 1.0) + 1 = (0.1, 2.0)
+            # A.RandomScale(scale_limit=(-0.9, 1.0), p=1.0),
+            A.PadIfNeeded(
+                min_height=resize_height,
+                min_width=resize_width,
+                border_mode=cv2.BORDER_CONSTANT,
+                value=0,
+                p=1.0,
+            ),
+            A.RandomCrop(height=resize_height, width=resize_width, p=1.0),
+            A.RandomBrightnessContrast(p=0.8),
+            A.HorizontalFlip(p=0.5),
+            A.VerticalFlip(p=0.5),
+            A.Rotate(border_mode=cv2.BORDER_CONSTANT, value=0, p=0.5),
+            A.Normalize(mean=norm_mean, std=norm_std),
+            ToTensorV2(),
+        ]
+    )
+
+
+def no_br_transform(resize_height, resize_width, norm_mean, norm_std):
+    return A.Compose(
+        [
+            A.Resize(height=resize_height, width=resize_width),
+            # scale size(bias=1): (-0.2, 0.2) + 1 = (0.8, 1.2)
+            A.RandomScale(scale_limit=(-0.2, 0.2), p=1.0),
+            ## scale size(bias=1): (-0.9, 1.0) + 1 = (0.1, 2.0)
+            # A.RandomScale(scale_limit=(-0.9, 1.0), p=1.0),
+            A.PadIfNeeded(
+                min_height=resize_height,
+                min_width=resize_width,
+                border_mode=cv2.BORDER_CONSTANT,
+                value=0,
+                p=1.0,
+            ),
+            A.RandomCrop(height=resize_height, width=resize_width, p=1.0),
+            A.HorizontalFlip(p=0.5),
+            A.VerticalFlip(p=0.5),
+            A.Rotate(border_mode=cv2.BORDER_CONSTANT, value=0, p=0.5),
+            A.Normalize(mean=norm_mean, std=norm_std),
+            ToTensorV2(),
+        ]
+    )
+
+
 class HPADataModule(pl.LightningDataModule):
     def __init__(
         self,
@@ -36,6 +97,7 @@ class HPADataModule(pl.LightningDataModule):
         batch_size=32,
         num_workers=2,
         image_size=512,
+        train_augmentation="base",
     ):
         super().__init__()
         self.dataset_dir = dataset_dir
@@ -49,6 +111,14 @@ class HPADataModule(pl.LightningDataModule):
         self.norm_std = HPA_RGB_STD
         self.dataset_cls = HPADataset
         self.setup_message = "Train on HPADataModule."
+        self.train_augmentation = train_augmentation
+
+        if self.train_augmentation == "base":
+            self.aug_fn = base_transform
+        elif self.train_augmentation == "no-br":
+            self.aug_fn = no_br_transform
+        else:
+            self.aug_fn = norm_transform
 
     def setup(self, stage=None):
         print(self.setup_message)
@@ -89,37 +159,19 @@ class HPADataModule(pl.LightningDataModule):
         return valid_loader
 
     def get_train_transform(self):
-        return A.Compose(
-            [
-                A.Resize(height=self.resize_height, width=self.resize_width),
-                # scale size(bias=1): (-0.2, 0.2) + 1 = (0.8, 1.2)
-                A.RandomScale(scale_limit=(-0.2, 0.2), p=1.0),
-                ## scale size(bias=1): (-0.9, 1.0) + 1 = (0.1, 2.0)
-                # A.RandomScale(scale_limit=(-0.9, 1.0), p=1.0),
-                A.PadIfNeeded(
-                    min_height=self.resize_height,
-                    min_width=self.resize_width,
-                    border_mode=cv2.BORDER_CONSTANT,
-                    value=0,
-                    p=1.0,
-                ),
-                A.RandomCrop(height=self.resize_height, width=self.resize_width, p=1.0),
-                A.RandomBrightnessContrast(p=0.8),
-                A.HorizontalFlip(p=0.5),
-                A.VerticalFlip(p=0.5),
-                A.Rotate(border_mode=cv2.BORDER_CONSTANT, value=0, p=0.5),
-                A.Normalize(mean=self.norm_mean, std=self.norm_std),
-                ToTensorV2(),
-            ]
+        return self.aug_fn(
+            resize_height=self.resize_height,
+            resize_width=self.resize_width,
+            norm_mean=self.norm_mean,
+            norm_std=self.norm_std,
         )
 
     def get_valid_transform(self):
-        return A.Compose(
-            [
-                A.Resize(height=self.resize_height, width=self.resize_width),
-                A.Normalize(mean=self.norm_mean, std=self.norm_std),
-                ToTensorV2(),
-            ]
+        return norm_transform(
+            resize_height=self.resize_height,
+            resize_width=self.resize_width,
+            norm_mean=self.norm_mean,
+            norm_std=self.norm_std,
         )
 
     def make_fold_index(self, n_splits=5, fold_index=0):
@@ -191,30 +243,6 @@ class HPAExtraRareDataModule(HPADataModule):
 
         self.train_dataset = Subset(self.train_dataset, self.train_index)
         self.valid_dataset = Subset(self.valid_dataset, self.valid_index)
-
-
-class HPANoBrExtraRareDataModule(HPAExtraRareDataModule):
-    def get_train_transform(self):
-        return A.Compose(
-            [
-                A.Resize(height=self.resize_height, width=self.resize_width),
-                # scale size(bias=1): (-0.2, 0.2) + 1 = (0.8, 1.2)
-                A.RandomScale(scale_limit=(-0.2, 0.2), p=1.0),
-                A.PadIfNeeded(
-                    min_height=self.resize_height,
-                    min_width=self.resize_width,
-                    border_mode=cv2.BORDER_CONSTANT,
-                    value=0,
-                    p=1.0,
-                ),
-                A.RandomCrop(height=self.resize_height, width=self.resize_width, p=1.0),
-                A.HorizontalFlip(p=0.5),
-                A.VerticalFlip(p=0.5),
-                A.Rotate(border_mode=cv2.BORDER_CONSTANT, value=0, p=0.5),
-                A.Normalize(mean=self.norm_mean, std=self.norm_std),
-                ToTensorV2(),
-            ]
-        )
 
 
 class HPASingleLabelExtraRareDataModule(HPAExtraRareDataModule):

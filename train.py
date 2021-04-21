@@ -9,7 +9,6 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from datamodule import (
     HPADataModule,
     HPAExtraRareDataModule,
-    HPANoBrExtraRareDataModule,
     HPASingleLabelExtraRareDataModule,
     HPARGYSingleLabelExtraRareDataModule,
     HPARBYSingleLabelExtraRareDataModule,
@@ -35,7 +34,9 @@ def main():
         choices=[
             "base",
             "extra-rare",
-            "no-br-extra-rare" "single-label-extra-rare",
+            "no-br-extra-rare",
+            "single-label-extra-rare",
+            "no-br-single-label-extra-rare",
             "rgy-single-label-extra-rare",
             "rby-single-label-extra-rare",
             "gby-single-label-extra-rare",
@@ -196,7 +197,7 @@ def main():
             image_size=args.image_size,
         )
     elif args.dataset_choice == "no-br-extra-rare":
-        dm = HPANoBrExtraRareDataModule(
+        dm = HPAExtraRareDataModule(
             dataset_dir=args.dataset_dir,
             dataset_rare_dir=args.dataset_rare_dir,
             batch_size=args.batch_size,
@@ -204,6 +205,7 @@ def main():
             fold_splits=args.fold_splits,
             fold_index=args.fold_index,
             image_size=args.image_size,
+            train_augmentation="no-br",
         )
     elif args.dataset_choice == "single-label-extra-rare":
         dm = HPASingleLabelExtraRareDataModule(
@@ -214,6 +216,17 @@ def main():
             fold_splits=args.fold_splits,
             fold_index=args.fold_index,
             image_size=args.image_size,
+        )
+    elif args.dataset_choice == "no-br-single-label-extra-rare":
+        dm = HPASingleLabelExtraRareDataModule(
+            dataset_dir=args.dataset_dir,
+            dataset_rare_dir=args.dataset_rare_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+            train_augmentation="no-br",
         )
     elif args.dataset_choice == "rgy-single-label-extra-rare":
         dm = HPARGYSingleLabelExtraRareDataModule(
