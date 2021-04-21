@@ -9,6 +9,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from datamodule import (
     HPADataModule,
     HPAExtraRareDataModule,
+    HPANoBrExtraRareDataModule,
     HPASingleLabelExtraRareDataModule,
     HPARGYSingleLabelExtraRareDataModule,
     HPARBYSingleLabelExtraRareDataModule,
@@ -34,7 +35,7 @@ def main():
         choices=[
             "base",
             "extra-rare",
-            "single-label-extra-rare",
+            "no-br-extra-rare" "single-label-extra-rare",
             "rgy-single-label-extra-rare",
             "rby-single-label-extra-rare",
             "gby-single-label-extra-rare",
@@ -186,6 +187,16 @@ def main():
     # ----------
     if args.dataset_choice == "extra-rare":
         dm = HPAExtraRareDataModule(
+            dataset_dir=args.dataset_dir,
+            dataset_rare_dir=args.dataset_rare_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+        )
+    elif args.dataset_choice == "no-br-extra-rare":
+        dm = HPANoBrExtraRareDataModule(
             dataset_dir=args.dataset_dir,
             dataset_rare_dir=args.dataset_rare_dir,
             batch_size=args.batch_size,
