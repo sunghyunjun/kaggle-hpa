@@ -87,6 +87,14 @@ def main():
 
     # Pytorch-Lightning Trainer flags
     parser.add_argument(
+        "--accumulate-grad-batches",
+        type=int,
+        default=1,
+        help="Accumulates grads every k batches",
+    )
+
+    # Pytorch-Lightning Trainer flags
+    parser.add_argument(
         "--max-epochs",
         type=int,
         default=10,
@@ -155,6 +163,11 @@ def main():
     )
     parser.add_argument(
         "--gamma", type=float, default=1.5, help="focal loss gamma (default: 1.5)"
+    )
+    parser.add_argument(
+        "--mixed-loss",
+        action="store_true",
+        help="Focal loss at class 1, 11 and BCE loss at others",
     )
     parser.add_argument(
         "--neptune-logger", action="store_true", help="use neptune logger"
@@ -280,6 +293,7 @@ def main():
         max_epochs=args.max_epochs,
         alpha=args.alpha,
         gamma=args.gamma,
+        mixed_loss=args.mixed_loss,
     )
 
     checkpoint_callback = ModelCheckpoint(
