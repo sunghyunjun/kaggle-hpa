@@ -1,3 +1,4 @@
+from typing import List
 import pytorch_lightning as pl
 import timm
 import torch
@@ -22,6 +23,20 @@ def focal_loss(preds, targets, alpha=0.25, gamma=1.5):
     return loss
 
 
+def get_alpha_gamma(num_classes: int, indices: List[int]):
+    """
+    default alpha = 0.5, alpha at specific indices = 0.25
+    default gamma = 0, gamma at specific indices = 1.5
+    """
+    alpha = torch.ones(num_classes) * 0.5
+    gamma = torch.zeros(num_classes)
+
+    alpha[indices] = 0.25
+    gamma[indices] = 1.5
+
+    return alpha, gamma
+
+
 class HPAClassifier(pl.LightningModule):
     def __init__(
         self,
@@ -33,6 +48,7 @@ class HPAClassifier(pl.LightningModule):
         alpha=0.25,
         gamma=1.5,
         check_auroc=False,
+        mixed_loss=False,
     ):
         super().__init__()
         self.model_name = model_name
@@ -44,6 +60,11 @@ class HPAClassifier(pl.LightningModule):
         self.alpha = alpha
         self.gamma = gamma
         self.check_auroc = check_auroc
+        self.mixed_loss = mixed_loss
+
+        if self.mixed_loss:
+            # Focal loss at class 1, 11 and BCE loss at others
+            self.alpha, self.gamma = get_alpha_gamma(self.num_classes, [1, 11])
 
         self.model = self.get_model()
 
@@ -163,4 +184,3 @@ class HPAClassifier(pl.LightningModule):
         )
 
         return model
-        
