@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import CosineAnnealingLR
-from torchmetrics import Accuracy, AUROC, F1
+from torchmetrics import Accuracy, AUROC, F1, Precision, Recall
 
 
 def focal_loss(preds, targets, alpha=0.25, gamma=1.5):
@@ -78,6 +78,20 @@ class HPAClassifier(pl.LightningModule):
             num_classes=self.num_classes, average=None, compute_on_step=False
         )
 
+        self.train_precision = Precision(
+            num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+        self.valid_precision = Precision(
+            num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+
+        self.train_recall = Recall(
+            num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+        self.valid_recall = Recall(
+            num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+
         if self.check_auroc:
             # AUROC returns list type when average=None
             self.train_auroc = AUROC(
@@ -102,6 +116,8 @@ class HPAClassifier(pl.LightningModule):
         self.log("train_loss", loss)
         self.log("train_acc_step", self.train_acc(preds, targets))
         self.train_f1(preds, targets)
+        self.train_precision(preds, targets)
+        self.train_recall(preds, targets)
 
         if self.check_auroc:
             self.train_auroc(preds, targets)
@@ -111,11 +127,17 @@ class HPAClassifier(pl.LightningModule):
     def training_epoch_end(self, training_step_outputs):
         self.log("train_acc_epoch", self.train_acc.compute())
         train_f1 = self.train_f1.compute()
+        train_precision = self.train_precision.compute()
+        train_recall = self.train_recall.compute()
 
         for i in range(self.num_classes):
             self.log(f"train_f1_{i}", train_f1[i])
+            self.log(f"train_precision_{i}", train_precision[i])
+            self.log(f"train_recall_{i}", train_recall[i])
 
         self.log("train_f1_mean", torch.mean(train_f1))
+        self.log("train_precision_mean", torch.mean(train_precision))
+        self.log("train_recall_mean", torch.mean(train_recall))
 
         if self.check_auroc:
             try:
@@ -141,6 +163,9 @@ class HPAClassifier(pl.LightningModule):
         self.log("valid_loss", loss)
         self.log("valid_acc_step", self.valid_acc(preds, targets))
         self.valid_f1(preds, targets)
+        self.valid_precision(preds, targets)
+        self.valid_recall(preds, targets)
+
         # self.valid_auroc(preds, targets)
 
         return loss
@@ -148,11 +173,17 @@ class HPAClassifier(pl.LightningModule):
     def validation_epoch_end(self, validation_step_outputs):
         self.log("valid_acc_epoch", self.valid_acc.compute())
         valid_f1 = self.valid_f1.compute()
+        valid_precision = self.valid_precision.compute()
+        valid_recall = self.valid_recall.compute()
 
         for i in range(self.num_classes):
             self.log(f"valid_f1_{i}", valid_f1[i])
+            self.log(f"valid_precision_{i}", valid_precision[i])
+            self.log(f"valid_recall_{i}", valid_recall[i])
 
         self.log("valid_f1_mean", torch.mean(valid_f1))
+        self.log("valid_precision_mean", torch.mean(valid_precision))
+        self.log("valid_recall_mean", torch.mean(valid_recall))
 
         if self.check_auroc:
             try:
