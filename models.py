@@ -139,6 +139,11 @@ class HPAClassifier(pl.LightningModule):
         self.log("train_precision_mean", torch.mean(train_precision))
         self.log("train_recall_mean", torch.mean(train_recall))
 
+        self.train_acc.reset()
+        self.train_f1.reset()
+        self.train_precision.reset()
+        self.train_recall.reset()
+
         if self.check_auroc:
             try:
                 # AUROC returns list type when average=None
@@ -151,6 +156,8 @@ class HPAClassifier(pl.LightningModule):
                 self.log(f"train_auroc_{i}", train_auroc[i])
 
             self.log("train_auroc_mean", torch.mean(train_auroc))
+
+            self.train_auroc.reset()
 
     def validation_step(self, batch, batch_idx):
         images, targets = batch
@@ -185,6 +192,11 @@ class HPAClassifier(pl.LightningModule):
         self.log("valid_precision_mean", torch.mean(valid_precision))
         self.log("valid_recall_mean", torch.mean(valid_recall))
 
+        self.valid_acc.reset()
+        self.valid_f1.reset()
+        self.valid_precision.reset()
+        self.valid_recall.reset()
+
         if self.check_auroc:
             try:
                 # AUROC returns list type when average=None
@@ -197,6 +209,8 @@ class HPAClassifier(pl.LightningModule):
                 self.log(f"valid_auroc_{i}", valid_auroc[i])
 
             self.log("valid_auroc_mean", torch.mean(valid_auroc))
+
+            self.valid_auroc.reset()
 
     def configure_optimizers(self):
         optimizer = optim.AdamW(
