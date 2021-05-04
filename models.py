@@ -9,7 +9,12 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchmetrics import Accuracy, AUROC, F1, Precision, Recall
 
 
-def focal_loss(preds, targets, alpha=0.25, gamma=1.5):
+def focal_loss(preds, targets, alpha=0.25, gamma=1.5, smoothing=0.0):
+    confidence = 1 - smoothing
+    index = targets.gt(0)
+    targets = torch.empty(size=targets.size(), device=targets.device).fill_(smoothing)
+    targets[index] = confidence
+
     bce_loss = F.binary_cross_entropy_with_logits(
         preds, targets.to(preds.dtype), reduction="none"
     )
@@ -49,6 +54,7 @@ class HPAClassifier(pl.LightningModule):
         gamma=1.5,
         check_auroc=False,
         mixed_loss=False,
+        smoothing=0.0,
     ):
         super().__init__()
         self.model_name = model_name
@@ -61,6 +67,7 @@ class HPAClassifier(pl.LightningModule):
         self.gamma = gamma
         self.check_auroc = check_auroc
         self.mixed_loss = mixed_loss
+        self.smoothing = smoothing
 
         if self.mixed_loss:
             # Focal loss at class 1, 11 and BCE loss at others
@@ -109,7 +116,13 @@ class HPAClassifier(pl.LightningModule):
         images, targets = batch
         preds = self.model(images)
 
-        loss = focal_loss(preds, targets, alpha=self.alpha, gamma=self.gamma)
+        loss = focal_loss(
+            preds,
+            targets,
+            alpha=self.alpha,
+            gamma=self.gamma,
+            smoothing=self.smoothing,
+        )
 
         preds = torch.sigmoid(preds)
 

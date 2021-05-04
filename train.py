@@ -165,6 +165,9 @@ def main():
         "--gamma", type=float, default=1.5, help="focal loss gamma (default: 1.5)"
     )
     parser.add_argument(
+        "--smoothing", type=float, default=0.0, help="label smoothing (default: 0.0)"
+    )
+    parser.add_argument(
         "--mixed-loss",
         action="store_true",
         help="Focal loss at class 1, 11 and BCE loss at others",
@@ -294,6 +297,7 @@ def main():
         alpha=args.alpha,
         gamma=args.gamma,
         mixed_loss=args.mixed_loss,
+        smoothing=args.smoothing,
     )
 
     checkpoint_callback = ModelCheckpoint(
