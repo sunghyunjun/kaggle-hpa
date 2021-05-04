@@ -163,10 +163,16 @@ def main():
         help="weight decay (default: 0.0001)",
     )
     parser.add_argument(
-        "--alpha", type=float, default=0.25, help="focal loss alpha (default: 0.25)"
+        "--alpha",
+        type=float,
+        default=0.5,
+        help="focal loss alpha (default: alpha=0.5, gamma=0.0 for bce loss)",
     )
     parser.add_argument(
-        "--gamma", type=float, default=1.5, help="focal loss gamma (default: 1.5)"
+        "--gamma",
+        type=float,
+        default=0.0,
+        help="focal loss gamma (default: alpha=0.5, gamma=0.0 for bce loss)",
     )
     parser.add_argument(
         "--smoothing", type=float, default=0.0, help="label smoothing (default: 0.0)"
