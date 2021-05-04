@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader, Subset, ConcatDataset
 
 from dataset import (
     HPADataset,
+    HPARGYDataset,
     HPARBYSingleLabelDataset,
     HPARGYSingleLabelDataset,
     HPAGBYSingleLabelDataset,
@@ -243,6 +244,24 @@ class HPAExtraRareDataModule(HPADataModule):
 
         self.train_dataset = Subset(self.train_dataset, self.train_index)
         self.valid_dataset = Subset(self.valid_dataset, self.valid_index)
+
+
+class HPARGYDataModule(HPADataModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.norm_mean = HPA_RGY_MEAN
+        self.norm_std = HPA_RGY_STD
+        self.dataset_cls = HPARGYDataset
+        self.setup_message = "Train on HPARGYDataModule."
+
+
+class HPARGYExtraRareDataModule(HPAExtraRareDataModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.norm_mean = HPA_RGY_MEAN
+        self.norm_std = HPA_RGY_STD
+        self.dataset_cls = HPARGYDataset
+        self.setup_message = "Train on HPARGYExtraRareDataModule."
 
 
 class HPASingleLabelExtraRareDataModule(HPAExtraRareDataModule):
