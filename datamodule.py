@@ -13,6 +13,8 @@ from torch.utils.data import DataLoader, Subset, ConcatDataset
 from dataset import (
     HPADataset,
     HPARGYDataset,
+    HPARBYDataset,
+    HPAGBYDataset,
     HPARBYSingleLabelDataset,
     HPARGYSingleLabelDataset,
     HPAGBYSingleLabelDataset,
@@ -255,6 +257,24 @@ class HPARGYDataModule(HPADataModule):
         self.setup_message = "Train on HPARGYDataModule."
 
 
+class HPARBYDataModule(HPADataModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.norm_mean = HPA_RBY_MEAN
+        self.norm_std = HPA_RBY_STD
+        self.dataset_cls = HPARBYDataset
+        self.setup_message = "Train on HPARBYDataModule."
+
+
+class HPAGBYDataModule(HPADataModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.norm_mean = HPA_GBY_MEAN
+        self.norm_std = HPA_GBY_STD
+        self.dataset_cls = HPAGBYDataset
+        self.setup_message = "Train on HPAGBYDataModule."
+
+
 class HPARGYExtraRareDataModule(HPAExtraRareDataModule):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -262,6 +282,24 @@ class HPARGYExtraRareDataModule(HPAExtraRareDataModule):
         self.norm_std = HPA_RGY_STD
         self.dataset_cls = HPARGYDataset
         self.setup_message = "Train on HPARGYExtraRareDataModule."
+
+
+class HPARBYExtraRareDataModule(HPAExtraRareDataModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.norm_mean = HPA_RBY_MEAN
+        self.norm_std = HPA_RBY_STD
+        self.dataset_cls = HPARBYDataset
+        self.setup_message = "Train on HPARBYExtraRareDataModule."
+
+
+class HPAGBYExtraRareDataModule(HPAExtraRareDataModule):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.norm_mean = HPA_GBY_MEAN
+        self.norm_std = HPA_GBY_STD
+        self.dataset_cls = HPAGBYDataset
+        self.setup_message = "Train on HPAGBYExtraRareDataModule."
 
 
 class HPASingleLabelExtraRareDataModule(HPAExtraRareDataModule):

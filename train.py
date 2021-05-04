@@ -9,12 +9,16 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from datamodule import (
     HPADataModule,
     HPAExtraRareDataModule,
+    HPARGYDataModule,
+    HPARBYDataModule,
+    HPAGBYDataModule,
+    HPARGYExtraRareDataModule,
+    HPARBYExtraRareDataModule,
+    HPAGBYExtraRareDataModule,
     HPASingleLabelExtraRareDataModule,
     HPARGYSingleLabelExtraRareDataModule,
     HPARBYSingleLabelExtraRareDataModule,
     HPAGBYSingleLabelExtraRareDataModule,
-    HPARGYDataModule,
-    HPARGYExtraRareDataModule,
 )
 from models import HPAClassifier
 
@@ -43,7 +47,11 @@ def main():
             "rby-single-label-extra-rare",
             "gby-single-label-extra-rare",
             "rgy-base",
+            "rby-base",
+            "gby-base",
             "rgy-extra-rare",
+            "rby-extra-rare",
+            "gby-extra-rare",
         ],
         help="choose dataset for training. base: default competition's dataset, extra-rare: base + extra-rare dataset",
     )
@@ -293,8 +301,46 @@ def main():
             fold_index=args.fold_index,
             image_size=args.image_size,
         )
+    elif args.dataset_choice == "rby-base":
+        dm = HPARBYDataModule(
+            dataset_dir=args.dataset_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+        )
+    elif args.dataset_choice == "gby-base":
+        dm = HPAGBYDataModule(
+            dataset_dir=args.dataset_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+        )
     elif args.dataset_choice == "rgy-extra-rare":
         dm = HPARGYExtraRareDataModule(
+            dataset_dir=args.dataset_dir,
+            dataset_rare_dir=args.dataset_rare_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+        )
+    elif args.dataset_choice == "rby-extra-rare":
+        dm = HPARBYExtraRareDataModule(
+            dataset_dir=args.dataset_dir,
+            dataset_rare_dir=args.dataset_rare_dir,
+            batch_size=args.batch_size,
+            num_workers=args.workers,
+            fold_splits=args.fold_splits,
+            fold_index=args.fold_index,
+            image_size=args.image_size,
+        )
+    elif args.dataset_choice == "gby-extra-rare":
+        dm = HPAGBYExtraRareDataModule(
             dataset_dir=args.dataset_dir,
             dataset_rare_dir=args.dataset_rare_dir,
             batch_size=args.batch_size,
