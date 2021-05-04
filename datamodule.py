@@ -101,6 +101,7 @@ class HPADataModule(pl.LightningDataModule):
         num_workers=2,
         image_size=512,
         train_augmentation="base",
+        **kwargs,
     ):
         super().__init__()
         self.dataset_dir = dataset_dir
