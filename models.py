@@ -9,11 +9,21 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from torchmetrics import Accuracy, AUROC, F1, Precision, Recall
 
 
-def focal_loss(preds, targets, alpha=0.25, gamma=1.5, smoothing=0.0):
+def focal_loss(preds, targets, alpha=0.25, gamma=1.5, smoothing=0.0, weighted=False):
     confidence = 1 - smoothing
     index = targets.gt(0)
     targets = torch.empty(size=targets.size(), device=targets.device).fill_(smoothing)
     targets[index] = confidence
+
+    if weighted:
+        count_pos = torch.count_nonzero(targets)
+        count_neg = targets.numel() - count_pos
+
+        w_pos = targets.numel() / (count_pos + 1e-5)
+        w_neg = targets.numel() / (count_neg + 1e-5)
+    else:
+        w_pos = 1
+        w_neg = 1
 
     bce_loss = F.binary_cross_entropy_with_logits(
         preds, targets.to(preds.dtype), reduction="none"
@@ -21,8 +31,8 @@ def focal_loss(preds, targets, alpha=0.25, gamma=1.5, smoothing=0.0):
     probs = torch.sigmoid(preds)
     loss = torch.where(
         targets >= 0.5,
-        alpha * (1.0 - probs) ** gamma * bce_loss,
-        (1 - alpha) * probs ** gamma * bce_loss,
+        w_pos * alpha * (1.0 - probs) ** gamma * bce_loss,
+        w_neg * (1 - alpha) * probs ** gamma * bce_loss,
     )
     loss = loss.mean()
     return loss
@@ -55,6 +65,7 @@ class HPAClassifier(pl.LightningModule):
         check_auroc=False,
         mixed_loss=False,
         smoothing=0.0,
+        weighted_loss=False,
     ):
         super().__init__()
         self.model_name = model_name
@@ -68,6 +79,7 @@ class HPAClassifier(pl.LightningModule):
         self.check_auroc = check_auroc
         self.mixed_loss = mixed_loss
         self.smoothing = smoothing
+        self.weighted_loss = weighted_loss
 
         if self.mixed_loss:
             # Focal loss at class 1, 11 and BCE loss at others
@@ -83,6 +95,13 @@ class HPAClassifier(pl.LightningModule):
         )
         self.valid_f1 = F1(
             num_classes=self.num_classes, average=None, compute_on_step=False
+        )
+
+        self.train_f1_micro = F1(
+            num_classes=self.num_classes, average="micro", compute_on_step=False
+        )
+        self.valid_f1_micro = F1(
+            num_classes=self.num_classes, average="micro", compute_on_step=False
         )
 
         self.train_precision = Precision(
@@ -122,6 +141,7 @@ class HPAClassifier(pl.LightningModule):
             alpha=self.alpha,
             gamma=self.gamma,
             smoothing=self.smoothing,
+            weighted=self.weighted_loss,
         )
 
         preds = torch.sigmoid(preds)
@@ -129,6 +149,7 @@ class HPAClassifier(pl.LightningModule):
         self.log("train_loss", loss)
         self.log("train_acc_step", self.train_acc(preds, targets))
         self.train_f1(preds, targets)
+        self.train_f1_micro(preds, targets)
         self.train_precision(preds, targets)
         self.train_recall(preds, targets)
 
@@ -140,6 +161,7 @@ class HPAClassifier(pl.LightningModule):
     def training_epoch_end(self, training_step_outputs):
         self.log("train_acc_epoch", self.train_acc.compute())
         train_f1 = self.train_f1.compute()
+        train_f1_micro = self.train_f1_micro.compute()
         train_precision = self.train_precision.compute()
         train_recall = self.train_recall.compute()
 
@@ -149,11 +171,13 @@ class HPAClassifier(pl.LightningModule):
             self.log(f"train_recall_{i}", train_recall[i])
 
         self.log("train_f1_mean", torch.mean(train_f1))
+        self.log("train_f1_micro", train_f1_micro)
         self.log("train_precision_mean", torch.mean(train_precision))
         self.log("train_recall_mean", torch.mean(train_recall))
 
         self.train_acc.reset()
         self.train_f1.reset()
+        self.train_f1_micro.reset()
         self.train_precision.reset()
         self.train_recall.reset()
 
@@ -183,6 +207,7 @@ class HPAClassifier(pl.LightningModule):
         self.log("valid_loss", loss)
         self.log("valid_acc_step", self.valid_acc(preds, targets))
         self.valid_f1(preds, targets)
+        self.valid_f1_micro(preds, targets)
         self.valid_precision(preds, targets)
         self.valid_recall(preds, targets)
 
@@ -193,6 +218,7 @@ class HPAClassifier(pl.LightningModule):
     def validation_epoch_end(self, validation_step_outputs):
         self.log("valid_acc_epoch", self.valid_acc.compute())
         valid_f1 = self.valid_f1.compute()
+        valid_f1_micro = self.valid_f1_micro.compute()
         valid_precision = self.valid_precision.compute()
         valid_recall = self.valid_recall.compute()
 
@@ -202,11 +228,13 @@ class HPAClassifier(pl.LightningModule):
             self.log(f"valid_recall_{i}", valid_recall[i])
 
         self.log("valid_f1_mean", torch.mean(valid_f1))
+        self.log("valid_f1_micro", valid_f1_micro)
         self.log("valid_precision_mean", torch.mean(valid_precision))
         self.log("valid_recall_mean", torch.mean(valid_recall))
 
         self.valid_acc.reset()
         self.valid_f1.reset()
+        self.valid_f1_micro.reset()
         self.valid_precision.reset()
         self.valid_recall.reset()
 

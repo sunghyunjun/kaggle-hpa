@@ -191,6 +191,9 @@ def main():
         help="Focal loss at class 1, 11 and BCE loss at others",
     )
     parser.add_argument(
+        "--weighted-loss", action="store_true", help="use weighted loss"
+    )
+    parser.add_argument(
         "--neptune-logger", action="store_true", help="use neptune logger"
     )
     parser.add_argument(
@@ -373,6 +376,7 @@ def main():
         gamma=args.gamma,
         mixed_loss=args.mixed_loss,
         smoothing=args.smoothing,
+        weighted_loss=args.weighted_loss,
     )
 
     checkpoint_callback = ModelCheckpoint(
