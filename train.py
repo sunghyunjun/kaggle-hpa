@@ -39,6 +39,8 @@ def main():
         dm_name=args.dataset_choice,
         dataset_dir=args.dataset_dir,
         dataset_rare_dir=args.dataset_rare_dir,
+        dataset_full_dir=args.dataset_full_dir,
+        train_full_csv=args.train_full_csv,
         batch_size=args.batch_size,
         num_workers=args.workers,
         fold_splits=args.fold_splits,

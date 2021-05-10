@@ -12,6 +12,8 @@ from torch.utils.data import DataLoader, Subset, ConcatDataset
 
 from dataset import (
     HPADataset,
+    HPAFullDataset,
+    HPAFullGCSDataset,
     HPARGYDataset,
     HPARBYDataset,
     HPAGBYDataset,
@@ -238,6 +240,110 @@ class HPAExtraRareDataModule(HPADataModule):
 
         self.train_df = pd.concat(
             [self.train_hpa_dataset.train_df, self.train_rare_dataset.train_df],
+            axis=0,
+        )
+
+        self.train_index, self.valid_index = self.make_fold_index(
+            n_splits=self.fold_splits, fold_index=self.fold_index
+        )
+
+        self.train_dataset = Subset(self.train_dataset, self.train_index)
+        self.valid_dataset = Subset(self.valid_dataset, self.valid_index)
+
+
+class HPAFullDataModule(HPADataModule):
+    def __init__(
+        self,
+        dataset_full_dir="dataset-full",
+        train_full_csv="kaggle_2021.tsv",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.dataset_full_dir = dataset_full_dir
+        self.train_full_csv = train_full_csv
+        self.setup_message = "Train on HPAFullDataModule."
+
+    def setup(self, stage=None):
+        print(self.setup_message)
+        self.train_hpa_dataset = HPADataset(
+            self.dataset_dir, transform=self.get_train_transform()
+        )
+        self.valid_hpa_dataset = HPADataset(
+            self.dataset_dir, transform=self.get_valid_transform()
+        )
+
+        self.train_full_dataset = HPAFullDataset(
+            self.dataset_full_dir,
+            transform=self.get_train_transform(),
+            train_csv=self.train_full_csv,
+        )
+        self.valid_full_dataset = HPAFullDataset(
+            self.dataset_full_dir,
+            transform=self.get_valid_transform(),
+            train_csv=self.train_full_csv,
+        )
+
+        self.train_dataset = ConcatDataset(
+            [self.train_hpa_dataset, self.train_full_dataset]
+        )
+        self.valid_dataset = ConcatDataset(
+            [self.valid_hpa_dataset, self.valid_full_dataset]
+        )
+
+        self.train_df = pd.concat(
+            [self.train_hpa_dataset.train_df, self.train_full_dataset.train_df],
+            axis=0,
+        )
+
+        self.train_index, self.valid_index = self.make_fold_index(
+            n_splits=self.fold_splits, fold_index=self.fold_index
+        )
+
+        self.train_dataset = Subset(self.train_dataset, self.train_index)
+        self.valid_dataset = Subset(self.valid_dataset, self.valid_index)
+
+
+class HPAFullGCSDataModule(HPADataModule):
+    def __init__(
+        self,
+        dataset_full_dir="dataset-full",
+        train_full_csv="kaggle_2021.tsv",
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.dataset_full_dir = dataset_full_dir
+        self.train_full_csv = train_full_csv
+        self.setup_message = "Train on HPAFullGCSDataModule."
+
+    def setup(self, stage=None):
+        print(self.setup_message)
+        self.train_hpa_dataset = HPADataset(
+            self.dataset_dir, transform=self.get_train_transform()
+        )
+        self.valid_hpa_dataset = HPADataset(
+            self.dataset_dir, transform=self.get_valid_transform()
+        )
+
+        self.train_full_dataset = HPAFullGCSDataset(
+            self.dataset_full_dir,
+            transform=self.get_train_transform(),
+            train_csv=self.train_full_csv,
+        )
+        self.valid_full_dataset = HPAFullGCSDataset(
+            self.dataset_full_dir,
+            transform=self.get_valid_transform(),
+            train_csv=self.train_full_csv,
+        )
+
+        self.train_dataset = ConcatDataset(
+            [self.train_hpa_dataset, self.train_full_dataset]
+        )
+        self.valid_dataset = ConcatDataset(
+            [self.valid_hpa_dataset, self.valid_full_dataset]
+        )
+
+        self.train_df = pd.concat(
+            [self.train_hpa_dataset.train_df, self.train_full_dataset.train_df],
             axis=0,
         )
 

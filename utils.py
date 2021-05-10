@@ -9,6 +9,8 @@ def add_default_arg(parser):
         choices=[
             "base",
             "extra-rare",
+            "full",
+            "full-gcs",
             "no-br-extra-rare",
             "single-label-extra-rare",
             "no-br-single-label-extra-rare",
@@ -35,6 +37,18 @@ def add_default_arg(parser):
         default="dataset-rare",
         metavar="DIR",
         help="path to extra dataset for rare classes",
+    )
+    parser.add_argument(
+        "--dataset-full-dir",
+        default="dataset-full",
+        metavar="DIR",
+        help="path to extra full dataset",
+    )
+    parser.add_argument(
+        "--train-full-csv",
+        default="kaggle_2021.tsv",
+        metavar="PATH",
+        help="path to train csv of full dataset",
     )
 
     # Pytorch-Lightning Trainer flags
@@ -185,6 +199,8 @@ def create_dm(
     dm_name="base",
     dataset_dir="dataset",
     dataset_rare_dir="dataset-rare",
+    dataset_full_dir="dataset-full",
+    train_full_csv="kaggle_2021.tsv",
     batch_size=32,
     num_workers=2,
     fold_splits=5,
@@ -195,6 +211,8 @@ def create_dm(
     cls_dict = {
         "base": HPADataModule,
         "extra-rare": HPAExtraRareDataModule,
+        "full": HPAFullDataModule,
+        "full-gcs": HPAFullGCSDataModule,
         "no-br-extra-rare": HPAExtraRareDataModule,
         "single-label-extra-rare": HPASingleLabelExtraRareDataModule,
         "no-br-single-label-extra-rare": HPASingleLabelExtraRareDataModule,
@@ -215,6 +233,8 @@ def create_dm(
     dm = cls_dict[dm_name](
         dataset_dir=dataset_dir,
         dataset_rare_dir=dataset_rare_dir,
+        dataset_full_dir=dataset_full_dir,
+        train_full_csv=train_full_csv,
         batch_size=batch_size,
         num_workers=num_workers,
         fold_splits=fold_splits,
