@@ -55,11 +55,11 @@ image size는 1024px 이며 다음의 데이터셋으로 훈련하였습니다.
 loss는 bce, focal loss를 사용하였습니다.
 
 |model|dataset|folds|loss|batch_size|init_lr|weight_decay|macro F1|micro F1|public LB|private LB|
-|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |efficientnet_b0|full|2 of 5|bce|16|6.0e-4|1.0e-5|0.7663|0.8171|0.454|0.429|
 |efficientnet_b0|rare classes|single|bce|16|6.0e-4|1.0e-5|0.8154|0.8368|0.394|0.360|
 |seresnext26d_32x4d|full|single|alpha=0.75, gamma=0.0|14|6.5e-5|1.0e-5|0.7317|0.7956|checking|checking|
-|**final ensemble**|-|-|-|-|-|-|-|-|**0.471**|**0.433**|
+|**final ensemble**|||||||||**0.471**|**0.433**|
 
 ## Segmentation
 
