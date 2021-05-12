@@ -2,17 +2,15 @@
 
 Code for 46th place solution in [Kaggle Human Protein Atlas - Single Cell Classification](https://www.kaggle.com/c/hpa-single-cell-image-classification)
 
-More details overview will be updated soon.
-
 *Read this in other languages: [English](https://github.com/sunghyunjun/kaggle-hpa/blob/main/README.md), [한국어](https://github.com/sunghyunjun/kaggle-hpa/blob/main/README.ko.md)*
 
 ## Summary
 
 "Simple Image Level Multilabel Classifier"
 
-The label was determined by applying a classifier to the single cell mask obtained by HPA-Cell-Segmentation.
+HPA-Cell-Segmentation으로 구해진 Single Cell Mask에 Classifier를 적용시켜 Label을 판별하였습니다.
 
-Classifier was trained using the full dataset.
+Classifier는 Full dataset을 이용해 훈련하였습니다.
 
 ## Tools
 
@@ -24,7 +22,7 @@ Classifier was trained using the full dataset.
 
 ## Dataset
 
-I used both the Competitions default dataset and the extra dataset.
+Competitions default dataset과 extra dataset을 모두 사용하였습니다.
 
 [HPA 512 PNG Dataset](https://www.kaggle.com/phalanx/hpa-512512) by [@phalanx](https://www.kaggle.com/phalanx)
 
@@ -34,27 +32,27 @@ I used both the Competitions default dataset and the extra dataset.
 
 [HPA Public Data 768x768 "rare classes" dataset](https://www.kaggle.com/c/hpa-single-cell-image-classification/discussion/223822) by [@Alexander Riedel](https://www.kaggle.com/alexanderriedel)
 
-The extra dataset was downloaded by referring to the public note.
-Images saved to 768px png. The size is approximately 200 GB.
+extra dataset은 public note를 참고하여 다운로드 하였으며,
+768px png로 변환하여 구축하였습니다. 용량은 대략 200GB 정도입니다.
 
 [HPA public data download and HPACellSeg](https://www.kaggle.com/lnhtrang/hpa-public-data-download-and-hpacellseg)
 
 ## Validation
 
-MultilabelStratifiedKFold, 5-fold split was used.
+MultilabelStratifiedKFold를 사용하였으며, 5 fold로 데이터 세트를 구성하였습니다.
 
-The performance of Multilabel Classifier was verified with Macro-F1, Micro-F1 Score.
+Multilabel Classifier의 성능은 Macro-F1, Micro-F1 Score로 검증하였습니다.
 
 [iterative-stratification](https://github.com/trent-b/iterative-stratification)
 
 ## Model training
 
-The image size is 1024px, and trained with the following dataset.
+image size는 1024px 이며 다음의 데이터셋으로 훈련하였습니다.
 
 - 1024px Competition default dataset + 768px rare classes dataset(1024 resized)
 - 1024px Competition default dataset + 768px extra dataset(1024 resized)
 
-bce, focal loss was used.
+loss는 bce, focal loss를 사용하였습니다.
 
 |model|dataset|folds|loss|batch_size|init_lr|weight_decay|macro F1|micro F1|public LB|private LB|
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
@@ -65,11 +63,9 @@ bce, focal loss was used.
 
 ## Segmentation
 
-HPA-Cell-Segmentation was used, and the speed was improved by referring to @deoxy's notebook.
-
-The input image was resized by 1/4, and the CellSegmentator scale_factor=1.0.
-
-The related values of the label_cell function have been adjusted to 1/4.
+HPA-Cell-Segmentation을 사용하였으며, @deoxy의 notebook을 참고하여 속도를 개선했습니다.
+input image를 1/4 resize 하였고, CellSegmentator의 scale_factor=1.0으로 하였습니다.
+label_cell function의 관련 값들을 1/4로 조절하였습니다.
 
 [HPA-Cell-Segmentation](https://github.com/CellProfiling/HPA-Cell-Segmentation)
 
