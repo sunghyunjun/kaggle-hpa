@@ -47,10 +47,15 @@ Multilabel Classifier의 성능은 Macro-F1, Micro-F1 Score로 검증하였습�
 
 ## Model training
 
+3-channel RGB images
+
 image size는 1024px 이며 다음의 데이터셋으로 훈련하였습니다.
 
 - 1024px Competition default dataset + 768px rare classes dataset(1024 resized)
 - 1024px Competition default dataset + 768px extra dataset(1024 resized)
+- AdamW
+- CosineAnnealingLR
+- epochs = 5 for full, 10 for rare
 
 loss는 bce, focal loss를 사용하였습니다.
 
@@ -58,7 +63,7 @@ loss는 bce, focal loss를 사용하였습니다.
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |efficientnet_b0|full|2 of 5|bce|16|6.0e-4|1.0e-5|0.7663|0.8171|0.454|0.429|
 |efficientnet_b0|rare classes|single|bce|16|6.0e-4|1.0e-5|0.8154|0.8368|0.394|0.360|
-|seresnext26d_32x4d|full|single|alpha=0.75, gamma=0.0|14|6.5e-5|1.0e-5|0.7317|0.7956|checking|checking|
+|seresnext26d_32x4d|full|single|alpha=0.75, gamma=0.0|14|6.5e-5|1.0e-5|0.7317|0.7956|0.381|0.335|
 |**final ensemble**|||||||||**0.471**|**0.433**|
 
 ## Segmentation

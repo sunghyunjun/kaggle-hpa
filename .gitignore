@@ -4,10 +4,19 @@ __pycache__/
 .mypy_cache
 .vscode
 lightning_logs*
+notebook
 
 kaggle.json
+checkpoint
+dataset
+dataset-1024
+dataset-raw
+dataset-full
+dataset-extra-1024
+kaggle_2021.tsv
+
 hpa-512512.zip
 hpa-single-cell-image-classification.zip
-dataset
-dataset-raw
-notebook
+hpa-challenge-2021-extra-train-images.zip
+
+train_label_pred.csv

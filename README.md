@@ -2,8 +2,6 @@
 
 Code for 46th place solution in [Kaggle Human Protein Atlas - Single Cell Classification](https://www.kaggle.com/c/hpa-single-cell-image-classification)
 
-More details overview will be updated soon.
-
 *Read this in other languages: [English](https://github.com/sunghyunjun/kaggle-hpa/blob/main/README.md), [한국어](https://github.com/sunghyunjun/kaggle-hpa/blob/main/README.ko.md)*
 
 ## Summary
@@ -49,10 +47,15 @@ The performance of Multilabel Classifier was verified with Macro-F1, Micro-F1 Sc
 
 ## Model training
 
+3-channel RGB images
+
 The image size is 1024px, and trained with the following dataset.
 
 - 1024px Competition default dataset + 768px rare classes dataset(1024 resized)
 - 1024px Competition default dataset + 768px extra dataset(1024 resized)
+- AdamW
+- CosineAnnealingLR
+- epochs = 5 for full, 10 for rare
 
 bce, focal loss was used.
 
@@ -60,7 +63,7 @@ bce, focal loss was used.
 |:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 |efficientnet_b0|full|2 of 5|bce|16|6.0e-4|1.0e-5|0.7663|0.8171|0.454|0.429|
 |efficientnet_b0|rare classes|single|bce|16|6.0e-4|1.0e-5|0.8154|0.8368|0.394|0.360|
-|seresnext26d_32x4d|full|single|alpha=0.75, gamma=0.0|14|6.5e-5|1.0e-5|0.7317|0.7956|checking|checking|
+|seresnext26d_32x4d|full|single|alpha=0.75, gamma=0.0|14|6.5e-5|1.0e-5|0.7317|0.7956|0.381|0.335|
 |**final ensemble**|||||||||**0.471**|**0.433**|
 
 ## Segmentation
